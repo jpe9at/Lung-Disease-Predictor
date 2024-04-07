@@ -11,43 +11,6 @@ import shap
 import os
 import cv2
 
-def read_image(filepath, target_size=(160, 160)):
-    # Read the image from the filepath
-    img = cv2.imread(filepath)
-    # Resize the image to the target size
-    img = cv2.resize(img, target_size)
-    # Convert image to RGB (OpenCV reads images in BGR format by default)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    # Convert the image to a NumPy array and normalize the pixel values
-    img_np = np.array(img, dtype = np.float32) / 255
-    # Rearrange the dimensions to (channels, height, width)
-    img_np = np.transpose(img_np, (2,0,1))
-    return img_np
-
-def create_dataframe_with_image_data(directory):
-    # Initialize empty lists to store image data and labels
-    images = []
-    labels = []
-    # Iterate through all files in the directory
-    for filename in os.listdir(directory):
-        if filename.endswith(".jpeg") or filename.endswith(".png"):
-            filepath = os.path.join(directory, filename)
-            image = read_image(filepath)
-            images.append(image)
-            if 'bacteria'  in filename:
-                labels.append(1.0)
-            elif 'virus'  in filename: 
-                labels.append(0.0)
-            else: 
-                labels.append(-1.0)
-    # Create a pandas DataFrame from the lists
-    df = pd.DataFrame({'image': images, 'label': labels})
-    return df
-
-def merge_dfs(df_1,df_2):
-    merged_df = pd.concat([df_1, df_2], axis=0, ignore_index=True)
-    shuffled_df = merged_df.sample(frac=1).reset_index(drop=True)
-    return shuffled_df
 
 home_directory = os.path.expanduser('~')
 
