@@ -11,6 +11,21 @@ import shap
 import os
 import cv2
 
+import argparse
+
+######################################
+#Set an option whether Hyperparameter 
+#Optimization schould be included
+######################################
+
+parser = argparse.ArgumentParser(description="Description of your program")
+parser.add_argument("--hyperparameter_optimization", help="Use Hyperparameter optimization", default=None)
+
+args = parser.parse_args()
+    
+hyperparameter_optimization = args.hyperparameter_optimizaion:
+if hyperparameter_optimization == True:
+  print("Hyperparameter optimization:", hyperparameter_optimization)
 
 
 ######################################
