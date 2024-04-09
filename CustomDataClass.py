@@ -2,7 +2,8 @@ import numpy as np
 import torch 
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
-
+import os 
+import cv2
 
 def read_image(filepath, target_size=(160, 160)):
     # Read the image from the filepath

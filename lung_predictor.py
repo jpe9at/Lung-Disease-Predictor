@@ -23,7 +23,7 @@ parser.add_argument("--hyperparameter_optimization", help="Use Hyperparameter op
 
 args = parser.parse_args()
     
-hyperparameter_optimization = args.hyperparameter_optimizaion:
+hyperparameter_optimization = args.hyperparameter_optimization
 if hyperparameter_optimization == True:
   print("Hyperparameter optimization:", hyperparameter_optimization)
 
@@ -86,7 +86,7 @@ if hyperparameter_optimization == True:
   trainer.fit(cnn_model,data_train,data_val)
   best_params, best_accuracy = Trainer.Trainer.hyperparameter_optimization(data_train, data_test)
   
-  cnn_model= CNNLungs(best_params['hidden_size'], 3, optimizer = best_params['optimizer'], learning_rate = best_params['learning_rate'], l2 = best_params  param_initialisation = best_params['weight_initialisation']) 
+  cnn_model= CNNLungs(best_params['hidden_size'], 3, optimizer = best_params['optimizer'], learning_rate = best_params['learning_rate'], l2 = best_params['l2'],  param_initialisation = best_params['weight_initialisation']) 
   trainer = Trainer.Trainer(50, best_params['batch_size'], early_stopping_patience = 100)
   trainer.fit(cnn_model,data_train,data_val)
 
