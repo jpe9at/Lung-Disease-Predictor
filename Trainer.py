@@ -6,7 +6,7 @@ from Module import CNNLungs
 
 class Trainer: 
     """The base class for training models with data."""
-    def __init__(self, max_epochs, batch_size = 8, early_stopping_patience=6, min_delta = 0.7, num_gpus=0):
+    def __init__(self, max_epochs, batch_size = 8, early_stopping_patience=6, min_delta = 0.0007, num_gpus=0):
         self.max_epochs = max_epochs
         self.batch_size = batch_size
         self.early_stopping_patience = early_stopping_patience
@@ -118,14 +118,14 @@ class Trainer:
         return accuracy
     @classmethod
     def Optuna_objective(cls, trial,train_data, val_data):
-        #optimizer = trial.suggest_categorical("optimizer", ["SGD", "Adam"])
+        optimizer = trial.suggest_categorical("optimizer", ["SGD", "Adam"])
         learning_r = trial.suggest_float("learning_rate", 1e-6, 1e-4)
         batch_size = trial.suggest_categorical("batch_size", [8])
         hidden_size = trial.suggest_categorical('hidden_size',[32,64])
         param_init = trial.suggest_categorical('weight_initialisation', [None,(None, 'Xavier'), (None, 'He')])
-        l2_rate = trial.suggest_categorical('l2_rate', [0.0,0.0001,0.005])
+        l2_rate = trial.suggest_categorical('l2_rate', [0.15,0.1,0.01, 0.07])
 
-        cnn_model = CNNLungs(hidden_size, learning_rate = learning_r, l2 = l2_rate, scheduler = 'OnPlateau', param_initialisation = param_init)
+        cnn_model = CNNLungs(hidden_size, learning_rate = learning_r, l2 = l2_rate, scheduler = 'OnPlateau', param_initialisation = param_init, optimizer = optimizer)
         trainer = cls(50,  batch_size)
         trainer.fit(cnn_model, train_data, val_data)
 
@@ -135,7 +135,7 @@ class Trainer:
     def hyperparameter_optimization(cls, train_data, val_data):
         study = optuna.create_study(direction='minimize')
         objective_func = lambda trial: cls.Optuna_objective(trial, train_data, val_data)
-        study.optimize(objective_func, n_trials=20)
+        study.optimize(objective_func, n_trials=15)
 
         best_trial = study.best_trial
         best_params = best_trial.params

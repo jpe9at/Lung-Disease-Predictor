@@ -87,12 +87,12 @@ if hyperparameter_optimization == True:
   best_params, best_accuracy = Trainer.Trainer.hyperparameter_optimization(data_train, data_test)
   
   cnn_model= CNNLungs(best_params['hidden_size'], 3, optimizer = best_params['optimizer'], learning_rate = best_params['learning_rate'], l2 = best_params['l2'],  param_initialisation = best_params['weight_initialisation']) 
-  trainer = Trainer.Trainer(50, best_params['batch_size'], early_stopping_patience = 100)
+  trainer = Trainer.Trainer(50, best_params['batch_size'], early_stopping_patience = 20)
   trainer.fit(cnn_model,data_train,data_val)
 
 else: 
   cnn_model= CNNLungs(32, 3, optimizer = 'Adam', learning_rate = 0.00007, param_initialisation = (None,'He'), scheduler = 'OnPlateau', l1 = 0.0, clip_val = 1.5, l2 = 0.1 ) 
-  trainer = Trainer.Trainer(100, early_stopping_patience = 10)
+  trainer = Trainer.Trainer(50, early_stopping_patience = 20)
   trainer.fit(cnn_model,data_train,data_val)
 
 
@@ -123,24 +123,24 @@ plt.legend()
 #Use the DeepSHAP explainer
 ######################################
 
-examples = data_test.dataset.X[:-3]
-test = data_test.dataset.X[-3:]
+examples = data_test.dataset.X[-70:-4]
+test = data_test.dataset.X[-4:]
 
 explainer = shap.DeepExplainer(cnn_model, examples)
 
 # Compute SHAP values
 
-shap_values = explainer.shap_values(test)
+shap_values = explainer.shap_values(test, check_additivity=False)
 
 # Create a single figure to display all images with overlaid SHAP values
-fig, axs = plt.subplots(nrows=7, ncols=1, figsize=(8, 2*7))
+#fig, axs = plt.subplots(nrows=3*4, ncols=2, figsize=(8, 2*7))
 
 # Visualize SHAP values overlaid on images
-for i in range(7):
-    shap.image_plot(shap_values[i], examples[i].numpy(), show=False, ax=axs[i])
+for i in range(4):
+    shap.image_plot(shap_values[i], test[i].numpy(), show=False)#, ax=axs[i])
 
-plt.figure()
-plt.tight_layout()
+#plt.figure()
+#plt.tight_layout()
 plt.show()
 
 

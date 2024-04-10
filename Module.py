@@ -13,12 +13,25 @@ class CNNLungs(nn.Module):
     """The base class of models."""
     def __init__(self, hidden_size= 128,  output_size = 3, optimizer = 'Adam', learning_rate = 0.0001,loss_function = 'CEL', l1 = 0.0, l2 = 0.0, clip_val=0, scheduler = None, param_initialisation = None):
         super(CNNLungs, self).__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self.fc1 = nn.Linear(64 * 20 * 20, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, output_size)
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Linear(64 * 20 * 20, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, output_size),
+            nn.LogSoftmax(dim=1)
+        )
+
         self._init_weights = 'Default'
 
         self.optimizer = self.get_optimizer(optimizer, learning_rate, l2)
@@ -35,15 +48,11 @@ class CNNLungs(nn.Module):
             self.initialize_weights(layer, init_method)
 
     def forward(self, x):
-        x = self.pool(torch.relu(self.conv1(x)))
-        x = self.pool(torch.relu(self.conv2(x)))
-        x = self.pool(torch.relu(self.conv3(x)))
+        x = self.features(x)
         x = x.view(-1, 64 * 20 * 20)
-        x = torch.relu(self.fc1(x))
-        x = self.fc2(x)
-        x = F.log_softmax(x, dim=1)
+        x = self.classifier(x)
         return x
-    
+
     def get_optimizer(self, optimizer, learning_rate, l2):
         Optimizers = {'Adam':optim.Adam(self.parameters(), lr=learning_rate, weight_decay = l2), 'SGD': optim.SGD(self.parameters(), lr=learning_rate, momentum=0.09, weight_decay = l2)}
         return Optimizers[optimizer]
@@ -89,13 +98,7 @@ class CNNLungs(nn.Module):
             for param in self.parameters():
                 if param.grad is not None:
                     param.grad.data.clamp_(-clip_value, clip_value)
-    #@property
-    #def init_weights(self):
-    #    return self._init_weights
-    #@init_weights.setter
-    #def init_weights(self, value):
-    #    self._init_weights = value
-    #    
+
 
 '''
  The following is not needed for now, but could be implemented for a finer definition of the training procedure.
