@@ -12,6 +12,7 @@ import os
 import cv2
 
 import argparse
+import json
 
 ######################################
 #Set an option whether Hyperparameter 
@@ -39,7 +40,7 @@ home_directory = os.path.expanduser('~')
 directory1 = home_directory + '/Datasets/chest_xray/train/NORMAL'
 directory2 = home_directory + '/Datasets/chest_xray/train/PNEUMONIA'
 
-df_train_neg = create_dataframe_with_image_data(directory2)
+df_train_neg = create_dataframe_with_image_data(directory1)
 df_train_pos = create_dataframe_with_image_data(directory2)
 df_train = merge_dfs(df_train_neg, df_train_pos)
 
@@ -48,7 +49,7 @@ print('Load validation data')
 directory1 = home_directory + '/Datasets/chest_xray/val/NORMAL'
 directory2 = home_directory + '/Datasets/chest_xray/val/PNEUMONIA'
 
-df_val_neg = create_dataframe_with_image_data(directory2)
+df_val_neg = create_dataframe_with_image_data(directory1)
 df_val_pos = create_dataframe_with_image_data(directory2)
 df_val = merge_dfs(df_val_neg, df_val_pos)
 
@@ -57,7 +58,7 @@ print('Load test data')
 directory1 = home_directory + '/Datasets/chest_xray/test/NORMAL'
 directory2 = home_directory + '/Datasets/chest_xray/test/PNEUMONIA'
 
-df_test_neg = create_dataframe_with_image_data(directory2)
+df_test_neg = create_dataframe_with_image_data(directory1)
 df_test_pos = create_dataframe_with_image_data(directory2)
 df_test = merge_dfs(df_test_neg, df_test_pos)
 
@@ -81,19 +82,18 @@ data_test = DataModule(X_test,y_test)
 #Initialise and train CNN
 ######################################
 
-if hyperparameter_optimization == True: 
+if hyperparameter_optimization: 
+    print('starting hyperparameter training loop')
+    best_params, best_accuracy = Trainer.Trainer.hyperparameter_optimization(data_train, data_test)
   
-  trainer.fit(cnn_model,data_train,data_val)
-  best_params, best_accuracy = Trainer.Trainer.hyperparameter_optimization(data_train, data_test)
-  
-  cnn_model= CNNLungs(best_params['hidden_size'], 3, optimizer = best_params['optimizer'], learning_rate = best_params['learning_rate'], l2 = best_params['l2'],  param_initialisation = best_params['weight_initialisation']) 
-  trainer = Trainer.Trainer(50, best_params['batch_size'], early_stopping_patience = 20)
-  trainer.fit(cnn_model,data_train,data_val)
+    cnn_model= CNNLungs(best_params['hidden_size'], 3, optimizer = best_params['optimizer'], learning_rate = best_params['learning_rate'], l2 = best_params['l2_rate'],  param_initialisation = best_params['weight_initialisation']) 
+    trainer = Trainer.Trainer(50, best_params['batch_size'], early_stopping_patience = 20)
+    trainer.fit(cnn_model,data_train,data_val)
 
-else: 
-  cnn_model= CNNLungs(32, 3, optimizer = 'Adam', learning_rate = 0.00007, param_initialisation = (None,'He'), scheduler = 'OnPlateau', l1 = 0.0, clip_val = 1.5, l2 = 0.1 ) 
-  trainer = Trainer.Trainer(50, early_stopping_patience = 20)
-  trainer.fit(cnn_model,data_train,data_val)
+else:
+    cnn_model= CNNLungs(32, 3, optimizer = 'Adam', learning_rate = 8.998e-05, param_initialisation = (None), scheduler = 'OnPlateau', l1 = 0.0, clip_val = 1.5, l2 = 0.1 ) 
+    trainer = Trainer.Trainer(50, 8, early_stopping_patience = 10)
+    trainer.fit(cnn_model,data_train,data_val)
 
 
 ######################################
@@ -123,8 +123,8 @@ plt.legend()
 #Use the DeepSHAP explainer
 ######################################
 
-examples = data_test.dataset.X[-70:-4]
-test = data_test.dataset.X[-4:]
+examples = data_test.dataset.X[-70:-5]
+test = data_test.dataset.X[-5:-2]
 
 explainer = shap.DeepExplainer(cnn_model, examples)
 

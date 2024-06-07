@@ -33,7 +33,7 @@ def create_dataframe_with_image_data(directory):
             elif 'virus'  in filename: 
                 labels.append(0.0)
             else: 
-                labels.append(-1.0)
+                labels.append(2.0)
     # Create a pandas DataFrame from the lists
     df = pd.DataFrame({'image': images, 'label': labels})
     return df
