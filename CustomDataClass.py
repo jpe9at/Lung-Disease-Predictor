@@ -44,27 +44,31 @@ def merge_dfs(df_1,df_2):
     return shuffled_df
 
 
+
 class Data(Dataset):
-    def __init__(self, X, y):
-        #needed to transform input tensor to float.
+    def __init__(self, X, y, transform=None):
         X = np.array([arr.astype(float) for arr in X.values], dtype=float)
-        self.X = torch.tensor(X, dtype = torch.float32)
-        #prediction
-        self.y = torch.tensor(y, dtype = torch.long)
+        self.X = torch.tensor(X, dtype=torch.float32)
+        self.y = torch.tensor(y.values, dtype=torch.long)
         self.len = self.X.shape[0]
+        self.transform = transform
        
     def __getitem__(self, index):
-        return self.X[index], self.y[index]
+        image = self.X[index].numpy().transpose(1, 2, 0)  # Convert to HWC format
+        if self.transform:
+            image = self.transform(image)
+        return image, self.y[index]
    
     def __len__(self):
         return self.len
 
-class DataModule: 
-    def __init__(self, X,y):
-        self.dataset = Data(X,y)
 
-    def get_dataloader(self, batch_size, num_workers=4):
-        return torch.utils.data.DataLoader(self.dataset, batch_size=batch_size, shuffle=False, num_workers=0, collate_fn=None, pin_memory=False)
+class DataModule: 
+    def __init__(self, X, y, transform=None):
+        self.dataset = Data(X, y, transform=transform)
+
+    def get_dataloader(self, batch_size, num_workers=0):
+        return DataLoader(self.dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     def train_dataloader(self, batch_size):
         return self.get_dataloader(batch_size)

@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
-
+from torchvision import transforms
 import shap
 
 import os
@@ -32,6 +32,23 @@ if hyperparameter_optimization == True:
 ######################################
 #Load the Data and create Data Class
 ######################################
+
+#define the data augmentation
+
+train_transforms = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(10),
+    transforms.RandomResizedCrop(160, scale=(0.8, 1.0)),
+    transforms.ToTensor()
+])
+
+val_test_transforms = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.Resize((160, 160)),
+    transforms.ToTensor()
+])
+
 
 print('Load training data')
 
@@ -65,17 +82,17 @@ df_test = merge_dfs(df_test_neg, df_test_pos)
 
 print('Creating Data Module')
 
-X_train =df_test.iloc[:,0]
-y_train =df_test.iloc[:,1]
-data_train = DataModule(X_train,y_train)
+X_train = df_train['image']
+y_train = df_train['label']
+data_train = DataModule(X_train, y_train, transform=train_transforms)
 
-X_val =df_val.iloc[:,0]
-y_val =df_val.iloc[:,1]
-data_val = DataModule(X_val,y_val)
+X_val = df_val['image']
+y_val = df_val['label']
+data_val = DataModule(X_val, y_val, transform=val_test_transforms)
 
-X_test =df_test.iloc[:,0]
-y_test =df_test.iloc[:,1]
-data_test = DataModule(X_test,y_test)
+X_test = df_test['image']
+y_test = df_test['label']
+data_test = DataModule(X_test, y_test, transform=val_test_transforms)
 
 
 ######################################
@@ -92,7 +109,7 @@ if hyperparameter_optimization:
 
 else:
     cnn_model= CNNLungs(32, 3, optimizer = 'Adam', learning_rate = 8.998e-05, param_initialisation = (None), scheduler = 'OnPlateau', l1 = 0.0, clip_val = 1.5, l2 = 0.1 ) 
-    trainer = Trainer.Trainer(50, 8, early_stopping_patience = 10)
+    trainer = Trainer.Trainer(1, 8, early_stopping_patience = 10)
     trainer.fit(cnn_model,data_train,data_val)
 
 
@@ -126,21 +143,26 @@ plt.legend()
 examples = data_test.dataset.X[-70:-5]
 test = data_test.dataset.X[-5:-2]
 
+with torch.no_grad():
+    predicted_probs = cnn_model(test)
+    predicted_labels = predicted_probs.argmax(dim=1)
+
+# Convert predicted_labels tensor to numpy array
+predicted_labels = predicted_labels.numpy() 
+
+correct_labels = data_test.dataset.y[-5:-2]
+
 explainer = shap.DeepExplainer(cnn_model, examples)
 
 # Compute SHAP values
 
 shap_values = explainer.shap_values(test, check_additivity=False)
 
-# Create a single figure to display all images with overlaid SHAP values
-#fig, axs = plt.subplots(nrows=3*4, ncols=2, figsize=(8, 2*7))
+# Loop through the available SHAP values
+for i in range(len(shap_values)):
+    shap.image_plot(shap_values[i], test[i].numpy(), show=False)
+    plt.title(f"Predicted: {predicted_labels[i]}, Correct: {correct_labels[i]}")
 
-# Visualize SHAP values overlaid on images
-for i in range(4):
-    shap.image_plot(shap_values[i], test[i].numpy(), show=False)#, ax=axs[i])
-
-#plt.figure()
-#plt.tight_layout()
 plt.show()
 
 
