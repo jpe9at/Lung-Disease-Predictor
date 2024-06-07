@@ -3,14 +3,8 @@ import torch
 import torch.nn.init as init
 import torch.nn.functional as F
 
-'''
-output_size_height = ((input_size_height - kernel_size_height + 2 * padding_height) // stride_height) + 1
-output_size_width = ((input_size_width - kernel_size_width + 2 * padding_width) // stride_width) + 1
-output_size = (output_size_height, output_size_width)
-'''
 
 class CNNLungs(nn.Module):
-    """The base class of models."""
     def __init__(self, hidden_size= 128,  output_size = 3, optimizer = 'Adam', learning_rate = 0.0001,loss_function = 'CEL', l1 = 0.0, l2 = 0.0, clip_val=0, scheduler = None, param_initialisation = None):
         super(CNNLungs, self).__init__()
         self.features = nn.Sequential(
@@ -99,16 +93,3 @@ class CNNLungs(nn.Module):
                 if param.grad is not None:
                     param.grad.data.clamp_(-clip_value, clip_value)
 
-
-'''
- The following is not needed for now, but could be implemented for a finer definition of the training procedure.
-
-    def training_step(self, batch):
-        l = self.loss(self(*batch[:-1]), batch[-1])
-        self.plot('loss', l, train=True)
-        return l
-
-    def validation_step(self, batch):
-        l = self.loss(self(*batch[:-1]), batch[-1])
-        self.plot('loss', l, train=False)
-'''
