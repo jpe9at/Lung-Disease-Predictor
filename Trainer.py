@@ -116,6 +116,8 @@ class Trainer:
         accuracy = correct_predictions / labels.size(0)
     
         return accuracy
+
+    
     @classmethod
     def Optuna_objective(cls, trial,train_data, val_data):
         optimizer = trial.suggest_categorical("optimizer", ["SGD", "Adam"])
