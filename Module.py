@@ -34,7 +34,9 @@ class CNNLungs(nn.Module):
         self.l1_rate = l1
         self.l2_rate = l2
         self.metric = self.get_metric()
-        self.clip_val = clip_val
+        if clip_val != 0: 
+            self.clip_gradients(clip_val)
+            
         self.scheduler = self.get_scheduler(scheduler, self.optimizer)
         
         if param_initialisation is not None: 
@@ -88,8 +90,8 @@ class CNNLungs(nn.Module):
                 # Initialize biases to zeros
                 nn.init.constant_(param, 0)
         
-        def clip_gradients(self, clip_value):
-            for param in self.parameters():
-                if param.grad is not None:
-                    param.grad.data.clamp_(-clip_value, clip_value)
+    def clip_gradients(self, clip_value):
+        for param in self.parameters():
+            if param.grad is not None:
+                param.grad.data.clamp_(-clip_value, clip_value)
 
